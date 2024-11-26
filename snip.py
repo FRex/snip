@@ -8,8 +8,11 @@ import os
 def main():
     """Main function."""
     snipdir = os.path.join(os.path.dirname(__file__), "files")
-    files = os.listdir(snipdir)
-    args = ["fzf", f"--preview=bat {snipdir}/{{}}"]
+    files = sorted(os.listdir(snipdir))  # sort files alphabetically
+
+    # NOTE: repr is to handle \\ on windows
+    # TODO: do it in a better way
+    args = ["fzf", f"--preview=bat {repr(snipdir)}/{{}}", "--tac"]
     p = subprocess.Popen(
         args,
         stdin=subprocess.PIPE,
