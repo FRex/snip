@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+"""A simple script to manage snippets of code using fzf and bat."""
 import subprocess
 import sys
 import os
