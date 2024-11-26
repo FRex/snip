@@ -16,6 +16,11 @@ def main():
     )
 
     out = p.communicate("\n".join(files))[0]
+
+    if p.returncode != 0:
+        print(f"return code is {p.returncode} - doing nothing", file=sys.stderr)
+        return
+
     with open(os.path.join(snipdir, out.strip()), "rb") as fptr:
         sys.stdout.flush()
         sys.stdout.buffer.write(fptr.read())
