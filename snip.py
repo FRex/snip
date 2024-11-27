@@ -10,6 +10,8 @@ PIPE = subprocess.PIPE  # shortcut to make multiline Popen call a one liner
 
 def main():
     """Main function."""
+
+    # TODO: make this snipdir come from env, config, etc.
     snipdir = os.path.join(os.path.dirname(__file__), "files")
     files = sorted(os.listdir(snipdir))  # sort files alphabetically
 
