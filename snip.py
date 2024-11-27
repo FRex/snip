@@ -17,7 +17,7 @@ def main():
 
     # NOTE: repr is to handle \\ on windows when given to bat
     # TODO: find a better way to do it in a crossplatform safe way?
-    args = ["fzf", f"--preview=bat {repr(snipdir)}/{{}}", "--tac"]
+    args = ["fzf", "--no-clear", f"--preview=bat {repr(snipdir)}/{{}}", "--tac"]
     with subprocess.Popen(args, stdin=PIPE, stdout=PIPE, encoding="UTF-8") as proc:
         chosen = proc.communicate("\n".join(files))[0].strip()
         if proc.returncode != 0:
