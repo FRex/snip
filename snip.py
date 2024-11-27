@@ -8,6 +8,29 @@ import os
 PIPE = subprocess.PIPE  # shortcut to make multiline Popen call a one liner
 
 
+def find_printer_program():
+    """Detect if bat is available and return "bat" or "cat" command to use."""
+
+    try:
+        args = ["bat", "--version"]
+        res = subprocess.run(args, stdout=PIPE, check=False, stderr=PIPE)
+
+        # non-empty stderr or non-zero return code => default to cat
+        if res.stderr or res.returncode != 0:
+            return "cat"
+
+        # bat's --version option prints bat and then a version number so check
+        if res.stdout.startswith(b"bat"):
+            return "bat --color=always"
+
+    # bat not found in path at all so subprocess.run threw
+    except FileNotFoundError:
+        pass
+
+    # default to cat
+    return "cat"
+
+
 def main():
     """Main function."""
 
@@ -17,7 +40,8 @@ def main():
 
     # NOTE: repr is to handle \\ on windows when given to bat
     # TODO: find a better way to do it in a crossplatform safe way?
-    args = ["fzf", "--no-clear", f"--preview=bat {repr(snipdir)}/{{}}", "--tac"]
+    printer = find_printer_program()
+    args = ["fzf", "--no-clear", f"--preview={printer} {repr(snipdir)}/{{}}", "--tac"]
     with subprocess.Popen(args, stdin=PIPE, stdout=PIPE, encoding="UTF-8") as proc:
         chosen = proc.communicate("\n".join(files))[0].strip()
         if proc.returncode != 0:
