@@ -45,7 +45,10 @@ def main():
     # NOTE: repr is to handle \\ on windows when given to bat
     # TODO: find a better way to do it in a crossplatform safe way?
     printer = find_printer_program()
-    args = ["fzf", "--no-clear", f"--preview={printer} {repr(snipdir)}/{{}}", "--tac"]
+    print(f"printer program is: {printer}\n", file=sys.stderr)
+    args = ["fzf", "--no-clear", "--tac"]
+    args.append(f"--preview={printer} {repr(snipdir)}/{{}}")
+
     result = subprocess.run(
         args,
         stdout=subprocess.PIPE,
@@ -54,14 +57,22 @@ def main():
         check=False,
     )
 
+    # return code non-zero, try print a hint if its SIGINT aka signal 2 + 128 = 130
     if result.returncode != 0:
-        print(f"return code is {result.returncode} - doing nothing!", file=sys.stderr)
+        note = " "
+        if result.returncode == 130:
+            note = " (SIGINT from Ctrl + C) "
+        print(
+            f"return code is {result.returncode}{note}- doing nothing!",
+            file=sys.stderr,
+        )
         sys.exit(result.returncode)  # forward the return code
 
+    # by now we know we pickd a file, so grab that filename, minus newlines and spaces at ends
     chosen = result.stdout.strip()
 
     # dump entire file to stdout as binary to not convert newlines on windows
-    # the flushing before and after is just in case (probably not needed)
+    # the flushing before and after is just in case (probably not needed?)
     print(f'dumping "{os.path.join(snipdir, chosen)}" to stdout\n', file=sys.stderr)
     with open(os.path.join(snipdir, chosen), "rb") as file:
         sys.stdout.flush()
