@@ -5,15 +5,14 @@ import sys
 import os
 
 
-PIPE = subprocess.PIPE  # shortcut to make multiline Popen call a one liner
-
-
 def find_printer_program():
     """Detect if bat is available and return "bat" or "cat" command to use."""
 
     try:
         args = ["bat", "--version"]
-        res = subprocess.run(args, stdout=PIPE, check=False, stderr=PIPE)
+        res = subprocess.run(
+            args, stdout=subprocess.PIPE, check=False, stderr=subprocess.PIPE
+        )
 
         # non-empty stderr or non-zero return code => default to cat
         if res.stderr or res.returncode != 0:
@@ -38,22 +37,32 @@ def main():
     snipdir = os.path.join(os.path.dirname(__file__), "files")
     files = sorted(os.listdir(snipdir))  # sort files alphabetically
 
+    # NOTE: even with spaces and backslashes, path with quotes around it works in cmd, ps and bash
+    # NOTE: printing all diagnostics to stderr, only file goes to the stdout
+    # NOTE: printing here so if fzf is cancelled with Ctrl-C this still shows up
+    print(f'cd "{snipdir}"\n', file=sys.stderr)
+
     # NOTE: repr is to handle \\ on windows when given to bat
     # TODO: find a better way to do it in a crossplatform safe way?
     printer = find_printer_program()
     args = ["fzf", "--no-clear", f"--preview={printer} {repr(snipdir)}/{{}}", "--tac"]
-    with subprocess.Popen(args, stdin=PIPE, stdout=PIPE, encoding="UTF-8") as proc:
-        chosen = proc.communicate("\n".join(files))[0].strip()
-        if proc.returncode != 0:
-            print(f"return code is {proc.returncode} - doing nothing!", file=sys.stderr)
-            sys.exit(proc.returncode)  # forward the return code
+    result = subprocess.run(
+        args,
+        stdout=subprocess.PIPE,
+        encoding="UTF-8",
+        input="\n".join(files),
+        check=False,
+    )
 
-    # NOTE: even with spaces and backslashes, path with quotes around it works in cmd, ps and bash
-    # NOTE: printing all diagnostics to stderr, only file goes to the stdout
-    print(f'cd "{snipdir}"', file=sys.stderr)
+    if result.returncode != 0:
+        print(f"return code is {result.returncode} - doing nothing!", file=sys.stderr)
+        sys.exit(result.returncode)  # forward the return code
+
+    chosen = result.stdout.strip()
 
     # dump entire file to stdout as binary to not convert newlines on windows
     # the flushing before and after is just in case (probably not needed)
+    print(f'dumping "{os.path.join(snipdir, chosen)}" to stdout\n', file=sys.stderr)
     with open(os.path.join(snipdir, chosen), "rb") as file:
         sys.stdout.flush()
         sys.stdout.buffer.write(file.read())
