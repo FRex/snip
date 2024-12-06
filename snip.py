@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """A simple script to manage snippets of code using fzf and bat."""
 import subprocess
+import shutil
 import sys
 import os
 
@@ -32,6 +33,13 @@ def find_printer_program():
 
 def main():
     """Main function."""
+
+    # if -w is in args, extract it from arg list and set printfile to False
+    args = sys.argv[1:]
+    printfile = True
+    if "-w" in args:
+        args.remove("-w")
+        printfile = False
 
     # TODO: make this snipdir come from env, config, etc.
     snipdir = os.path.join(os.path.dirname(__file__), "files")
@@ -70,14 +78,22 @@ def main():
 
     # by now we know we pickd a file, so grab that filename, minus newlines and spaces at ends
     chosen = result.stdout.strip()
+    chosenpath = os.path.join(snipdir, chosen)
 
-    # dump entire file to stdout as binary to not convert newlines on windows
-    # the flushing before and after is just in case (probably not needed?)
-    print(f'dumping "{os.path.join(snipdir, chosen)}" to stdout\n', file=sys.stderr)
-    with open(os.path.join(snipdir, chosen), "rb") as file:
-        sys.stdout.flush()
-        sys.stdout.buffer.write(file.read())
-        sys.stdout.flush()
+    if printfile:
+        # dump entire file to stdout as binary to not convert newlines on windows
+        # the flushing before and after is just in case (probably not needed?)
+        print(f'dumping "{chosenpath}" to stdout\n', file=sys.stderr)
+        with open(chosenpath, "rb") as file:
+            sys.stdout.flush()
+            sys.stdout.buffer.write(file.read())
+            sys.stdout.flush()
+    else:
+        # print path and copy file to current dir
+        print(f'copying "{chosenpath}" to current dir\n', file=sys.stderr)
+        shutil.copy(chosenpath, ".")
+        # TODO: verify here that file got copied?
+        # TODO: error handling in case of permission and other errors?
 
 
 if __name__ == "__main__":
