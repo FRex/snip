@@ -83,7 +83,13 @@ def main():
     if printfile:
         # dump entire file to stdout as binary to not convert newlines on windows
         # the flushing before and after is just in case (probably not needed?)
-        print(f'dumping "{chosenpath}" to stdout\n', file=sys.stderr)
+        print(
+            f'dumping "{chosenpath}" to stdout\n'
+            + "=" * 10
+            + " FILE BELOW THIS LINE "
+            + "=" * 10,
+            file=sys.stderr,
+        )
         with open(chosenpath, "rb") as file:
             sys.stdout.flush()
             sys.stdout.buffer.write(file.read())
